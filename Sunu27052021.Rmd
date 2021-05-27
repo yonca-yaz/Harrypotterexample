@@ -1,0 +1,354 @@
+---
+title: " R' da tm paketi ile Metin Madenciligi"
+author: "<br><br>Yonca YAZIRLI "
+date: "27.05.2021"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    css: ["kunoichi", "rladies", "rladies-fonts"] 
+    self_contained: false
+    nature:
+      ratio: "16:9"
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+    
+---
+class: inverse, center, middle
+
+<a href="mailto:yoncayazirli@gmail.com"><i class="fa fa-paper-plane fa-fw"></i>&nbsp; yoncayazirli@gmail.com</a><br>
+<a href="https://twitter.com/yncbnc"><i class="fa fa-twitter fa-fw"></i>&nbsp; @yncbnc</a><br>
+<a href="http://github.com/yonca-yaz"><i class="fa fa-github fa-fw"></i>&nbsp; @yonca-yaz</a><br>
+<a href="http://ybinici.eskisehir.edu"><i class="fa fa-map-marker fa-fw"></i>&nbsp; Eskisehir Teknik Universitesi- Istatistik ABD- Doktora Ogrencisi</a>
+
+---
+class: center, middle
+
+background-image: url(https://roelverbelen.netlify.app/img/hex-stickers.png)
+
+---
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+```
+class: center, middle
+
+background-image: url(https://datacated.com/wp-content/uploads/2019/01/0_8gb5Ir-2ROQne0WN.jpg)
+
+---
+# Akis
+
+- Metin Madenciligi Nedir?
+
+--
+
+- Metin Madenciligi Kullanim Alanlari
+
+--
+
+- Metin Madenciligi Asamalari
+
+--
+
+- Metin Madenciligi ile Siniflandirma Uygulamasi
+
+---
+class: center, middle
+
+# Metin Madenciligi
+---
+background-image: url(https://miro.medium.com/max/1400/1*ZesnXRM00UjrfD26_DC3Xg.png)
+
+background-position: center
+background-size: 60%
+
+.footnote[[*] https://medium.com/algorithms-data-structures/metin-madencili%C4%9Finde-text-mining-kavramlar-1-e11b87b28847]
+---
+# Metin Madenciligi Kullanim Alanlari
+
+- Risk Yonetimi (Risk Management)
+
+--
+
+- Bilgi Yonetimi (Knowledge Management)
+
+--
+
+- Is Zekasi (Bussiness Intelligence)
+
+--
+
+- Spam Filtreleme (Spam Filtering)
+
+--
+
+- Sosyal Medya Analizi (Social Media Analysis) vb.
+    
+---
+# Gerekli Paketler
+
+```yaml
+---
+install.packages("tm")  # metin madenciligi icin
+install.packages("wordcloud") # kelime bulutu icin 
+install.packages("RColorBrewer") # renk paletleri
+install.packages("devtools")
+devtools::install_github("bradleyboehmke/harrypotter") #dokuman dosyalar
+---
+```
+--
+background-image: url("https://66.media.tumblr.com/71e7064ae0891396e1a1fbd3e162f6ed/tumblr_nqew0vOsp91r83d7lo3_500.gifv")
+background-position: 50% 80%
+background-size: %90
+
+---
+# Dosyalarin Yuklenmesi
+```{r}
+library(harrypotter)
+titles <- c("Philosopher's Stone", "Chamber of Secrets", 
+            "Prisoner of Azkaban","Goblet of Fire", 
+            "Order of the Phoenix", "Half-Blood Prince",
+            "Deathly Hallows")
+books <- list(philosophers_stone, chamber_of_secrets, 
+              prisoner_of_azkaban, goblet_of_fire, 
+              order_of_the_phoenix, half_blood_prince,
+              deathly_hallows)
+```
+---
+# Vektor Uzay Modeli Olusturma (VectorSpace Model)
+```{r}
+library(tm)
+books_source <-VectorSource(books)
+
+```
+--
+class: center, middle
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/f/ff/Vector_space_model.jpg" width="200" height="200" /> 
+
+
+![Corpus](https://wikimedia.org/api/rest_v1/media/math/render/svg/6568769b5001c6040e121596945b7e419dddb4da)
+
+![Corpus](https://wikimedia.org/api/rest_v1/media/math/render/svg/d5b3e7c8ef051ef2c6411266ea1a490d36c8011e)
+---
+background-image: url("https://www.researchgate.net/profile/Anna_Baj-Rogowska/publication/318637064/figure/fig2/AS:518874164875265@1500720649214/Example-of-representation-with-vector-space-model.png")
+background-position: %50 %80
+background-size: %50
+
+.footnote[[*] "https://www.researchgate.net/publication/318637064_Agile_Commerce_in_the_light_of_Text_Mining"]
+
+---
+#Corpus Olusturma 
+```{r}
+  docs <- VCorpus (books_source)
+```
+--
+background-image: url("https://miro.medium.com/max/680/1*N7xmusMg1IKNxGtedwgH3g.png")
+background-position: bottom
+background-size: %10 
+
+.footnote[[*] https://medium.com/algorithms-data-structures/metin-madencili%C4%9Finde-text-mining-kavramlar-1-e11b87b28847]
+---
+#Metin Duzenleme
+
+```{r}
+toSpace <- content_transformer( #<<
+  function (x , pattern ) gsub(pattern, " ", x)) #<<
+docs <- tm_map(docs, toSpace, "/")
+docs <- tm_map(docs, toSpace, "@")
+docs <- tm_map(docs, toSpace, "\\|")
+docs <- tm_map (docs,content_transformer(tolower)) #Butun harflerin kucuk harfe donusturulmesi
+docs <- tm_map(docs, removeNumbers) # Rakamlarin silinmesi
+docs<- tm_map(docs, removePunctuation) # Noktalama isaretlerinin silinmesi
+docs <- tm_map(docs, removeWords, stopwords("en")) #Bir dilde en cok kullanilan kelimler (ben,sen,ve,ise vb.)
+docs <- tm_map(docs, stripWhitespace) # Bosluklarin silinmesi
+summary(docs)
+```
+---
+#Metin Duzenleme
+
+Karakter vektor olarak tanimladiginiz kelimeler ile kendi stopword listenizi olusturabilirsiniz 
+```yaml
+---
+corpus <- tm_map(corpus, removeWords, c("blabla1", "blabla2"))
+---
+```
+---
+#Terim Dokuman Matrisi/Dokuman Terim Matrisinin Olusturulmasi
+
+Corpustaki gerekli duzenlemelerden sonra metin formatindaki verilerin depolanmasi gerekmektedir. 
+
+```{r}
+library(tm)
+tdm <- TermDocumentMatrix(docs)
+tdm
+```
+---
+# Terim Frekanslarinin Hesaplanmasi
+```{r}
+m <- as.matrix(tdm)
+dim(m)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+head(d, 10)
+```
+---
+#Kelime Bulutunun Olusturulmasi
+```{r, fig.height=5, fig.width=5, fig.align= 'center'}
+library(wordcloud)
+library(RColorBrewer)
+set.seed(1234)
+wordcloud(words = d$word, freq = d$freq, min.freq = 100,
+          max.words=70, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(6, "Dark2"))
+```
+---
+# Histogram Gosterimi
+
+```{r, fig.height=4, fig.width=10, fig.align= 'center'}
+library(ggplot2)
+p <- ggplot(subset(d, freq>1500), 
+            aes(x = reorder(word, -freq), y =freq)) +
+  geom_bar(stat = "identity") + 
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+```
+---
+# Histogram Gosterimi 2
+
+```{r, fig.height=4, fig.width=5, fig.align= 'center'}
+p 
+
+```
+---
+
+class: center, middle
+
+background-image: url(https://media0.giphy.com/media/26BRzozg4TCBXv6QU/giphy.gif?cid=ecf05e47ge0rka2xca59facaqn3uxlcx3nyxn4gfrwc0ss2p&rid=giphy.gif&ct=g)
+
+---
+class: center, middle
+#Istatistik Kitaplarinin Metin Madenciligi Yontemleri Kullanilarak Yazarlarinin Egitimine Gore Siniflandirilmasi
+---
+
+
+Bu calismada, internet uzerinden yapilan bir arastirma ile elde edilen **istatistik** alaninda yazilmis kitaplarin **kunye bilgileri** ve bu kitaplarin yazarlarinin **lisans mezuniyetleri** uzerinde durulmustur. 
+
+- Farkli ogrenme yontemlerinin siniflandirma basarilarinin karsilastirilmasinda istatistik, matematik, ekonometri, muhendislik, biyoistatistik vb. lisans derecelerine sahip yazarlar tarafindan yazilmis **146** istatistik kitabinin kunye bilgilerini iceren bir **veri seti** olusturulmustur.
+
+- Bagimli degisken, **istatistikciler** ve **digerleri** olmak uzere **ikili sinifta** degerlendirilmistir.
+
+- Siniflandirmada boyut problemini azaltmak icin, on isleme asamasinda, verideki ilgisiz, etkisiz ve ozel karakterler cikarilmistir.
+
+--
+## Kullanilan Siniflandirma Yontemleri
+- K-En Yakin Komsu (k-Nearest Neigbour)
+- Destek Vektor Makinalari (Support Vector Machines)
+- Rasgele Orman (Random Forest)
+
+.footnote[[*] Betul Kan-Kilinc, Yonca Yazirli (2018), Istatistik Kitaplarinin Metin Madenciligi Yontemleri Kullanilarak Yazarlarinin Egitimine Gore Siniflandirilmasi, Turkiye Klinikleri J Biostat 2018;10(3):215-23]
+---
+# K- En Yakin Komsu Algoritmasi
+k- en yakin komsu yontemi, birbiri ile benzer ozellik gosteren nesneleri ayni kumelere atayan non-parametrik tahminleme yontemidir.
+--
+background-image:url("https://www.mathworks.com/matlabcentral/mlc-downloads/downloads/03faee64-e85e-4ea0-a2b4-e5964949e2d1/d99b9a4d-618c-45f0-86d1-388bdf852c1d/images/screenshot.gif")
+background-size: %50
+---
+# SVM- Destek Vektor Makineleri
+--
+background-image:url("https://static.javatpoint.com/tutorial/machine-learning/images/support-vector-machine-algorithm.png")
+
+---
+# Rasgele Orman Yontemi
+--
+background-image:url("https://i1.wp.com/sefiks.com/wp-content/uploads/2017/11/random-forest.png?resize=602%2C344&ssl=1")
+
+---
+#Uygulama
+
+```{r}
+books<-read.csv("C:/Users/yonca/Desktop/B146.txt",header=FALSE,sep=";")
+head(books)
+doc=t(books)
+library(tm)
+reviews <-doc
+review_source <-VectorSource(reviews)
+corpus <- VCorpus (review_source)
+corpus <- tm_map (corpus,content_transformer(tolower))
+corpus <- tm_map(corpus, removePunctuation)
+dtm <- DocumentTermMatrix(corpus)
+dtm2 <- as.matrix(dtm)
+frequency <- colSums(dtm2)
+frequency <- sort(frequency,decreasing=TRUE)
+head(frequency)
+```
+---
+# Verilerin Gorsellestirilmesi 1
+
+```{r, fig.height=4, fig.width=5, fig.align= 'center'}
+library(wordcloud)
+d=data.frame(word = names(frequency),freq=frequency)
+wordcloud(words = d$word, freq = d$freq, min.freq = 3,
+          max.words=70, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(6, "Dark2"))
+```
+---
+# Verilerin Gorsellestirilmesi 2
+
+```{r, fig.height=4, fig.width=5, fig.align= 'center'}
+library(ggplot2)
+p <- ggplot(subset(d, freq>10), 
+aes(x = reorder(word, -freq), y =freq)) +
+  geom_bar(stat = "identity") + 
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+p 
+
+```
+---
+#Su An Hangi Asamadayiz?
+
+<img src="https://d3i71xaburhd42.cloudfront.net/6f995ecc42291f4018a28bf82f78c88f521012e3/35-Figure1-1.png" width="900" height="500" />
+
+---
+```{r}
+mat.df <- as.data.frame(data.matrix(dtm), stringsAsfactors = FALSE)
+dim(mat.df)
+category=c(1,0,1,0,0,0,1,0,0,0,1,0,1,1,0,0,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1,1,1,1,1,1,1,1,0,1,1,0,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,1,0,1,0,0,1,1,1,1,1,1,0,0,0,1,1,0,1,1,0,0,1,0,0,1,0,0,1,0,0,0,1,0,1,0,0,0,0,0,1,0,0,1,0,1,0,1,1,1,0,0,1,1,1,1,1,1)
+mat.df <- cbind(mat.df, category)
+```
+---
+## Egitim-Test Veri Setlerinin Olusturulmasi
+
+```{r}
+train <- as.data.frame(mat.df)
+train$y <- as.factor(train$category)
+train <- sample(nrow(mat.df), ceiling(nrow(mat.df) * .70))
+test <- (1:nrow(mat.df))[- train]
+cl <- mat.df[, "category"]
+# Create model data and remove "category"
+modeldata <- mat.df[,!colnames(mat.df) %in% "category"]
+library(class)
+knn.pred <- knn(modeldata[train, ], modeldata[test, ], cl[train])
+#hata matrisinin olusturulmasi
+conf.mat <- table("Predictions" = knn.pred, Actual = cl[test])
+conf.mat
+(accuracy <- sum(diag(conf.mat))/length(test) * 100)
+```
+---
+# Sonuclar
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+sonuc=matrix(c(81.40, 65.12, 88.37), ncol=3, byrow=T)
+colnames(sonuc)=c('KNN','SVM','RF')
+rownames(sonuc)= c('Dogruluk Orani')
+sonuc
+```
+
+.center[Karsilastirmanin performanslari ile ilgili olarak, **rastgele orman (RF)** **(%88.37)** yazarlarin egitim sinifini digerlerinden daha etkili bir sekilde siniflandirmistir.]
+---
+
+class: center, middle
+
+# Thanks!
+
+Slides created via the R package [**xaringan**](https://github.com/yihui/xaringan).
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.org/knitr), and [R Markdown](https://rmarkdown.rstudio.com).
